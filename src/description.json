@@ -1,0 +1,15 @@
+{
+    "name": "Land Parcel #123",
+    "description": "A prime piece of real estate located in downtown New York.",
+    "image": "https://gateway.pinata.cloud/ipfs/QmUniqueArtHash",
+    "attributes": [
+        {
+            "trait_type": "Title Document Hash",
+            "value": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        },
+        {
+            "trait_type": "Location",
+            "value": "New York, USA"
+        }
+    ]
+}
