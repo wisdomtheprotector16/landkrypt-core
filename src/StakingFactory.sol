@@ -69,7 +69,9 @@ contract StakingFactory {
             address(stakingToken),
             address(developmentContract),
             tokenId,
-            targetAmount
+            targetAmount,
+            address(nftContract),
+            address(owner)
         );
 
         // Store contract references

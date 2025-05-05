@@ -20,6 +20,7 @@ contract NFTMarketplace {
     mapping(uint256 => Listing) public listings;
     mapping(uint256 => uint256) public earnings;
     mapping(uint256 => bool) public listedBool;
+    mapping(uint256 => uint256) public originalPrices
 
     event NFTListed(uint256 tokenId, uint256 price, address stakingContract);
     event NFTPurchased(uint256 tokenId, address buyer);
@@ -57,21 +58,22 @@ contract NFTMarketplace {
     }
 
     // Only the assigned staking contract can buy the NFT
+    
     function buyNFT(uint256 tokenId) external {
         Listing memory listing = listings[tokenId];
         require(listing.isListed, "NFT is not listed");
         require(msg.sender == listing.stakingContract, "Only assigned staking contract can buy");
 
-        // Transfer NFT from marketplace to staking contract
+        // Store original price before deleting listing
+        originalPrices[tokenId] = listing.price;
+
+        // Transfer NFT and record purchase as before
         nftContract.transferFrom(nftContract.ownerOf(tokenId), listing.stakingContract, tokenId);
-
-        // Record earnings
         earnings[tokenId] += listing.price;
+        
+        // Record both purchase time AND original price in NFTDAO
+        nftDAO.recordNFTPurchase(tokenId, listing.price);
 
-        // Record NFT purchase time in NFTDAO
-        nftDAO.recordNFTPurchaseTime(tokenId);
-
-        // Remove listing
         delete listings[tokenId];
         emit NFTPurchased(tokenId, msg.sender);
     }
@@ -118,4 +120,9 @@ contract NFTMarketplace {
         delete listings[tokenId];
         emit StablecoinBurned(tokenId, stablecoinAmount);
     }
+    // Add view function to get original price
+    function getOriginalPrice(uint256 tokenId) external view returns (uint256) {
+        return originalPrices[tokenId];
+    }
+
 }

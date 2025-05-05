@@ -5,10 +5,13 @@ import "./NFTMarketplace.sol";
 import "./LandKryptStablecoin.sol";
 import "./LandKryptStakingToken.sol";
 import "./DevelopmentContract.sol";
-import "@chainlink/contracts/src/v0.8/interfaces/AutomationCompatibleInterface.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@chainlink/src/v0.8/interfaces/AutomationCompatibleInterface.sol";
+import "@openzeppelin/security/ReentrancyGuard.sol";
+import "./RealEstateNFT.sol";
+
 
 contract NFTStaking is AutomationCompatibleInterface, ReentrancyGuard {
+    RealEstateNFT public nftContract;
     NFTMarketplace public marketplace;
     LandKryptStablecoin public stablecoin;
     LandKryptStakingToken public stakingToken; // LKST
@@ -17,6 +20,10 @@ contract NFTStaking is AutomationCompatibleInterface, ReentrancyGuard {
     uint256 public targetAmount;
     uint256 public totalStaked;
     address public owner;
+    address public admin; // Land Krypt admin address
+    
+
+   
 
     // Daily reward rate (0.05% = 0.0005 in decimal)
     uint256 public constant DAILY_REWARD_RATE = 5e14; // 0.0005 (0.05%)
@@ -45,6 +52,9 @@ contract NFTStaking is AutomationCompatibleInterface, ReentrancyGuard {
     event FinalRewardsDistributed(address indexed staker, uint256 amount);
     event StakeWithdrawn(address indexed staker, uint256 amount, uint256 penalty);
     event WithdrawalPenaltyUpdated(uint256 newPenaltyRate);
+    event AdminUpdated(address indexed newAdmin);
+    event NFTTransferred(uint256 indexed tokenId, address indexed to);
+
 
     constructor(
         address _marketplace,
@@ -53,6 +63,8 @@ contract NFTStaking is AutomationCompatibleInterface, ReentrancyGuard {
         address _developmentContract,
         uint256 _tokenId,
         uint256 _targetAmount
+        address _nftContract, // Added NFT contrac
+        address _admin // Added initial admin address
     ) {
         marketplace = NFTMarketplace(_marketplace);
         stablecoin = LandKryptStablecoin(_stablecoin);
@@ -64,10 +76,17 @@ contract NFTStaking is AutomationCompatibleInterface, ReentrancyGuard {
         contractCreationDay = block.timestamp / 1 days;
         withdrawalPenaltyRate = 10; // Default penalty rate (10%)
         isWithdrawalPenaltyEnabled = true; // Enable penalty by default
+        nftContract = RealEstateNFT(_nftContract);
+        admin = _admin;
     }
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Only owner can call this function");
+        _;
+    }
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Only Land Krypt admin can call");
         _;
     }
 
@@ -228,4 +247,28 @@ contract NFTStaking is AutomationCompatibleInterface, ReentrancyGuard {
 
         return total;
     }
+
+     /**
+     * @dev Transfer NFT to another address (admin only)
+     * @param _tokenId ID of the NFT to transfer
+     * @param _to Address to receive the NFT
+     */
+    function transferNFT(uint256 _tokenId, address _to) external onlyAdmin nonReentrant {
+        require(_to != address(0), "Cannot transfer to zero address");
+        require(nftContract.ownerOf(_tokenId) == address(this), "Contract doesn't own this NFT");
+        
+        nftContract.safeTransferFrom(address(this), _to, _tokenId);
+        emit NFTTransferred(_tokenId, _to);
+    }
+
+    /**
+     * @dev Update the admin address (owner only)
+     * @param _newAdmin Address of the new admin
+     */
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        require(_newAdmin != address(0), "Invalid admin address");
+        admin = _newAdmin;
+        emit AdminUpdated(_newAdmin);
+    }
+
 }
