@@ -156,3 +156,32 @@ For implementation queries, refer to:
 - GitHub: [LandKrypt-SmartContracts]
 - Docs: [landkrypt.gitbook.io]
 - Audit Reports: [coming soon]
+
+graph TD
+    A[Staker] -->|LKUSD| B(Staking Pool)
+    B -->|LKST| A
+    B -->|LKUSD| C(Development Contract)
+    C -->|Revenue| D[DAO Treasury]
+
+
+    # LandKrypt Technical Documentation
+
+## Smart Contract Architecture
+
+### 1. LandKryptStablecoin (LKUSD)
+
+#### Features
+- ERC-20 stablecoin pegged to USD
+- Dual permission system:
+  - **Minters**: Whitelisted addresses for token issuance
+  - **Burners**: Whitelisted addresses for token redemption
+- Owner-controlled allowlists
+
+#### Key Functions
+
+function addMinter(address account) external onlyOwner
+function removeMinter(address account) external onlyOwner
+function addBurner(address account) external onlyOwner 
+function removeBurner(address account) external onlyOwner
+function mint(address to, uint256 amount) external onlyMinter
+function burn(address from, uint256 amount) external onlyBurner
